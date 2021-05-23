@@ -1,4 +1,4 @@
-# ETF 별 종가 추이를 호출하는 함수
+# ETF 별 누적수익률 추이를 호출하는 함수
 
 from pykrx import stock
 import requests
@@ -24,23 +24,31 @@ df = df.rename(columns = {"itemcode":"종목코드", "itemname":"종목명"})
 # ESG_ TICKER를 추출합니다.
 ESG_TICKER = df[df['종목명'].str.contains('ESG')][1:]
 
+price = stock.get_etf_ohlcv_by_date('20191201', '20210523', '337160')
+price['Return'] = (price['종가'] / price['종가'].shift(1)) - 1
+
+
 # TICKER별로 종가 데이터를 누적합니다.
-stocks = dict()
+stock_price = dict()
+stock_rtn_cum = dict()
 for NAME,TICKER in ESG_TICKER[['종목명','종목코드']].itertuples(index=False):
-    price = stock.get_etf_ohlcv_by_date('20191201', '20210523', TICKER)
-    stocks[NAME] = price['종가'].values[:].tolist()
-df_price = pd.DataFrame(stocks)
-df_price.index = price.index
+    df = stock.get_etf_ohlcv_by_date('20191201', '20210523', TICKER)
+    df['수익률'] = (df['종가'] / df['종가'].shift(1)) - 1
+    df['누적수익률'] = (1 + df['수익률']).cumprod() - 1
+    stock_price[NAME] = df['종가'].values[:].tolist()
+    stock_rtn_cum[NAME] = df['누적수익률'].values[:].tolist()
+df_price = pd.DataFrame(stock_price)
+df_rtn_cum = pd.DataFrame(stock_rtn_cum)
+df_price.index = df.index
+df_rtn_cum.index = df.index
 
 # 데이터 Layout을 변환합니다.
 df_price = df_price.reset_index().rename(columns={"index": "id"})
-df_price['날짜'] = df_price['날짜'].astype('str')
-df_price['날짜'] = df_price['날짜'].apply(lambda _ : datetime.strptime(_,'%Y-%m-%d'))
-df_fig = pd.melt(df_price,id_vars=['날짜'], var_name = '종목코드', value_name = '종가')
-
-df_fig = px.line(df_fig, x='날짜', y='종가', color = '종목코드')
-
-
+df_rtn_cum = df_rtn_cum.reset_index().rename(columns={"index": "id"})
+# df_price['날짜'] = df_price['날짜'].astype('str')
+# df_price['날짜'] = df_price['날짜'].apply(lambda _ : datetime.strptime(_,'%Y-%m-%d'))
+df_fig = pd.melt(df_rtn_cum,id_vars=['날짜'], var_name = '종목코드', value_name = '누적수익률')
+df_fig = px.line(df_fig, x='날짜', y='누적수익률', color = '종목코드')
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -48,7 +56,7 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
-    html.H3("ESG ETF 종가 추이 "),
+    html.H3("ESG ETF 누적 수익률 추이 "),
     dcc.Graph(
         id = 'my-graph',
         style={'height': 600},
