@@ -50,8 +50,8 @@ def get_ESG_data(start_date,end_date):
     return df_rtn_cum, df_price
 
 # Default  값
-df_rtn_cum = get_ESG_data('20200101', '20201231')[0]
-df_price = get_ESG_data('20200101', '20201231')[1]
+df_rtn_cum = get_ESG_data('20200101', '20210531')[0]
+df_price = get_ESG_data('20200101', '20210531')[1]
 df_rtn_cum = df_rtn_cum.dropna()
 df_price = df_price.dropna()
 df_fig = pd.melt(df_rtn_cum,id_vars=['날짜'], var_name = '종목코드', value_name = '누적수익률')
@@ -68,8 +68,8 @@ app.layout = html.Div([
         id="my-date-picker-range",
         min_date_allowed=date(2015, 1, 1),
         start_date_placeholder_text='20200101',
-        end_date_placeholder_text='20201231',
-        display_format='YYYYMMDD'
+        end_date_placeholder_text='20210531',
+        display_format='YYYY-MM-DD'
     ),
     dcc.Graph(
         id = 'my-graph',
@@ -116,49 +116,51 @@ app.layout = html.Div([
 ])
 
 
-# @app.callback(
-#     Output('my-graph', 'figure'),
-#     [Input('my-date-picker-range', 'start_date'),
-#      Input('my-date-picker-range', 'end_date')])
-# def update_graph(start_date, end_date):
-#     def get_ESG_data(start_date, end_date):
-#         url = 'https://finance.naver.com/api/sise/etfItemList.nhn'
-#         json_data = json.loads(requests.get(url).text)
-#
-#         df = pd.json_normalize(json_data['result']['etfItemList'])
-#         df = df[['itemcode', 'itemname']]
-#         df = df.rename(columns={"itemcode": "종목코드", "itemname": "종목명"})
-#
-#         # ESG_ TICKER를 추출합니다.
-#         ESG_TICKER = df[df['종목명'].str.contains('ESG')][1:]
-#         mask = ESG_TICKER['종목코드'].isin(['385590'])
-#         ESG_TICKER = ESG_TICKER[~mask]
-#
-#         # TICKER별로 종가 데이터를 누적합니다.
-#         stock_price = dict()
-#         stock_rtn_cum = dict()
-#         for NAME, TICKER in ESG_TICKER[['종목명', '종목코드']].itertuples(index=False):
-#             df = stock.get_etf_ohlcv_by_date(start_date, end_date, TICKER)
-#             df['수익률'] = (df['종가'] / df['종가'].shift(1)) - 1
-#             df['누적수익률'] = (1 + df['수익률']).cumprod() - 1
-#             stock_price[NAME] = df['종가'].values[:].tolist()
-#             stock_rtn_cum[NAME] = df['누적수익률'].values[:].tolist()
-#         df_price = pd.DataFrame(stock_price)
-#         df_rtn_cum = pd.DataFrame(stock_rtn_cum)
-#         df_price.index = df.index
-#         df_rtn_cum.index = df.index
-#
-#         # 데이터 Layout을 변환합니다.
-#         df_price = df_price.reset_index().rename(columns={"index": "id"})
-#         df_rtn_cum = df_rtn_cum.reset_index().rename(columns={"index": "id"})
-#         df_price['날짜'] = df_price['날짜'].astype('str')
-#         df_price['날짜'] = df_price['날짜'].apply(lambda _: datetime.strptime(_, '%Y-%m-%d'))
-#         return df_rtn_cum, df_price
-#     df_rtn_cum= get_ESG_data(start_date, end_date)[0]
-#     df_rtn_cum = df_rtn_cum.dropna()
-#     df_fig = pd.melt(df_rtn_cum, id_vars=['날짜'], var_name='종목코드', value_name='누적수익률')
-#     df_fig = px.line(df_fig, x='날짜', y='누적수익률', color='종목코드')
-#     return df_fig
+@app.callback(
+    Output('my-graph', 'figure'),
+    [Input('my-date-picker-range', 'start_date'),
+     Input('my-date-picker-range', 'end_date')])
+def update_graph(start_date, end_date):
+    def get_ESG_data(start_date, end_date):
+        url = 'https://finance.naver.com/api/sise/etfItemList.nhn'
+        json_data = json.loads(requests.get(url).text)
+
+        df = pd.json_normalize(json_data['result']['etfItemList'])
+        df = df[['itemcode', 'itemname']]
+        df = df.rename(columns={"itemcode": "종목코드", "itemname": "종목명"})
+
+        # ESG_ TICKER를 추출합니다.
+        ESG_TICKER = df[df['종목명'].str.contains('ESG')][1:]
+        mask = ESG_TICKER['종목코드'].isin(['385590'])
+        ESG_TICKER = ESG_TICKER[~mask]
+
+        # TICKER별로 종가 데이터를 누적합니다.
+        stock_price = dict()
+        stock_rtn_cum = dict()
+        for NAME, TICKER in ESG_TICKER[['종목명', '종목코드']].itertuples(index=False):
+            df = stock.get_etf_ohlcv_by_date(start_date, end_date, TICKER)
+            df['수익률'] = (df['종가'] / df['종가'].shift(1)) - 1
+            df['누적수익률'] = (1 + df['수익률']).cumprod() - 1
+            stock_price[NAME] = df['종가'].values[:].tolist()
+            stock_rtn_cum[NAME] = df['누적수익률'].values[:].tolist()
+        df_price = pd.DataFrame(stock_price)
+        df_rtn_cum = pd.DataFrame(stock_rtn_cum)
+        df_price.index = df.index
+        df_rtn_cum.index = df.index
+
+        # 데이터 Layout을 변환합니다.
+        df_price = df_price.reset_index().rename(columns={"index": "id"})
+        df_rtn_cum = df_rtn_cum.reset_index().rename(columns={"index": "id"})
+        df_price['날짜'] = df_price['날짜'].astype('str')
+        df_price['날짜'] = df_price['날짜'].apply(lambda _: datetime.strptime(_, '%Y-%m-%d'))
+        return df_rtn_cum, df_price
+
+    # Default  값
+    df_rtn_cum = get_ESG_data('20200101', '20210531')[0]
+    df_rtn_cum = df_rtn_cum.dropna()
+    df_fig = pd.melt(df_rtn_cum, id_vars=['날짜'], var_name='종목코드', value_name='누적수익률')
+    df_fig = px.line(df_fig, x='날짜', y='누적수익률', color='종목코드')
+    return df_fig
 
 
 if __name__ == "__main__":
