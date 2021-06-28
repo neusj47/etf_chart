@@ -45,13 +45,11 @@ def get_ESG_data(start_date,end_date):
     # 데이터 Layout을 변환합니다.
     df_price = df_price.reset_index().rename(columns={"index": "id"})
     df_rtn_cum = df_rtn_cum.reset_index().rename(columns={"index": "id"})
-    df_price['날짜'] = df_price['날짜'].astype('str')
-    df_price['날짜'] = df_price['날짜'].apply(lambda _ : datetime.strptime(_,'%Y-%m-%d'))
     return df_rtn_cum, df_price
 
 # Default  값
-df_rtn_cum = get_ESG_data('20200101', '20210531')[0]
-df_price = get_ESG_data('20200101', '20210531')[1]
+df_rtn_cum = get_ESG_data('20200101', '20210628')[0]
+df_price = get_ESG_data('20200101', '20210628')[1]
 df_rtn_cum = df_rtn_cum.dropna()
 df_price = df_price.dropna()
 df_fig = pd.melt(df_rtn_cum,id_vars=['날짜'], var_name = '종목코드', value_name = '누적수익률')
@@ -68,8 +66,8 @@ app.layout = html.Div([
         id="my-date-picker-range",
         min_date_allowed=date(2015, 1, 1),
         start_date_placeholder_text='20200101',
-        end_date_placeholder_text='20210531',
-        display_format='YYYY-MM-DD'
+        end_date_placeholder_text='20210628',
+        display_format='YYYYMMDD'
     ),
     dcc.Graph(
         id = 'my-graph',
@@ -151,12 +149,10 @@ def update_graph(start_date, end_date):
         # 데이터 Layout을 변환합니다.
         df_price = df_price.reset_index().rename(columns={"index": "id"})
         df_rtn_cum = df_rtn_cum.reset_index().rename(columns={"index": "id"})
-        df_price['날짜'] = df_price['날짜'].astype('str')
-        df_price['날짜'] = df_price['날짜'].apply(lambda _: datetime.strptime(_, '%Y-%m-%d'))
         return df_rtn_cum, df_price
 
     # Default  값
-    df_rtn_cum = get_ESG_data('20200101', '20210531')[0]
+    df_rtn_cum = get_ESG_data(start_date, end_date)[0]
     df_rtn_cum = df_rtn_cum.dropna()
     df_fig = pd.melt(df_rtn_cum, id_vars=['날짜'], var_name='종목코드', value_name='누적수익률')
     df_fig = px.line(df_fig, x='날짜', y='누적수익률', color='종목코드')
@@ -164,4 +160,4 @@ def update_graph(start_date, end_date):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True, port=8060)
+    app.run_server(debug=True, port=8050)
