@@ -129,8 +129,8 @@ sidebar = html.Div(
         ),
         dbc.Nav(
             [
-                dbc.NavLink("ETF PDF", href="/", active="exact"),
-                dbc.NavLink("ETF 누적수익률", href="/page-1", active="exact")
+                dbc.NavLink("ESG ETF", href="/", active="exact"),
+                dbc.NavLink("ESF Index", href="/page-1", active="exact")
             ],
             vertical=True,
             pills=True,
@@ -147,63 +147,6 @@ app.layout = html.Div([
     content
 ])
 
-
-# app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-#
-# app.layout = html.Div([
-#     html.H3("ESG ETF 누적 수익률 추이 "),
-#     dcc.DatePickerRange(
-#         id="my-date-picker-range",
-#         min_date_allowed=date(2015, 1, 1),
-#         start_date_placeholder_text='20200101',
-#         end_date_placeholder_text='20210628',
-#         display_format='YYYYMMDD'
-#     ),
-#     dcc.Graph(
-#         id = 'my-graph',
-#         style={'height': 600},
-#         figure = df_fig
-#     ),
-#     dash_table.DataTable(
-#         id="datatable-interactivity",
-#         columns=[
-#             {
-#                 "name": i,
-#                 "id": i,
-#                 "deletable": False,
-#                 "selectable": True,
-#                 "hideable": False,
-#             }
-#             for i in df_price.columns
-#         ],
-#         data=df_price.to_dict("records"),  # the contents of the table
-#         sort_action="native",  # enables data to be sorted per-column by user or not ('none')
-#         sort_mode="single",  # sort across 'multi' or 'single' columns
-#         page_action="native",  # all data is passed to the table up-front or not ('none')
-#         page_size=15,  # number of rows visible per page
-#         style_cell={  # ensure adequate header width when text is shorter than cell's text
-#             "minWidth": 150,
-#             "maxWidth": 250,
-#             "width": 200,
-#         },
-#         style_data={  # overflow cells' content into multiple lines
-#             "whiteSpace": "normal",
-#             "height": "auto",
-#         },
-#         style_data_conditional=[
-#             {
-#                 'if': {'row_index': 'odd'},
-#                 'backgroundColor': 'rgb(248, 248, 248)'
-#             }
-#         ],
-#         style_header={
-#             'backgroundColor': 'rgb(230, 230, 230)',
-#             'fontWeight': 'bold'
-#         }
-#     )
-# ])
-
-
 @app.callback(
     Output("page-content", "children"),
     [Input("url", "pathname")]
@@ -212,19 +155,20 @@ def render_page_content(pathname):
     if pathname == "/":
         return html.Div([
     dcc.Tabs([
-        dcc.Tab(label = "ETF PDF", children = [
-            html.H3("ESG별 ETF 정보"),
+        dcc.Tab(label = "ESG_PDF", children = [
+            html.Hr(),
+            html.H3("ESG별 PDF 정보"),
+            html.Hr(),
+            html.H5(" * 날짜 입력"),
             dcc.DatePickerSingle(
-                    id="my-date-picker-single",
-                    min_date_allowed=date(2015, 1, 1),
-                    initial_visible_month=date(2021, 6, 28),
-                    display_format='YYYYMMDD'
-                    ),
-            dcc.Graph(
-                id = 'my-graph',
-                style={'height': 600},
-                figure = df_fig
-            ),
+                id="my-date-picker-single",
+                min_date_allowed=date(2015, 1, 1),
+                initial_visible_month=date(2021, 6, 28),
+                display_format='YYYYMMDD'
+                ),
+            html.Hr(),
+            html.H5(" * PDF TICKER"),
+            dcc.Dropdown(id='dropdown-TICKER', options=[], multi=True),
             dash_table.DataTable(
                 id="datatable-interactivity",
                 columns=[
@@ -265,8 +209,24 @@ def render_page_content(pathname):
                     'fontWeight': 'bold'
                 })
             ]),
-            dcc.Tab(label="KOSPI", children=[
-                html.H3("종목 주가 정보"),
+            dcc.Tab(label="누적수익률", children=[
+                html.H3("ESG 누적 수익률"),
+                html.Hr(),
+                html.H5(" * 날짜 입력"),
+                dcc.DatePickerRange(
+                        id="my-date-picker-range",
+                        min_date_allowed=date(2015, 1, 1),
+                        start_date_placeholder_text='20200505',
+                        end_date_placeholder_text='20210628',
+                        display_format='YYYYMMDD'
+                    ),
+                dcc.Graph(
+                    id = 'my-graph',
+                    style={'height': 600},
+                    figure = df_fig
+                ),
+                html.Hr(),
+                html.H5(" * ETF별 종가 추이"),
                 dash_table.DataTable(
                     id="datatable-interactivity_secu",
                     columns=[
@@ -311,7 +271,7 @@ def render_page_content(pathname):
         ])
     elif pathname == "/page-1":
         return [
-            html.H1('Grad School in Iran',
+            html.H1('good',
                     style={'textAlign': 'center'}),
             dcc.Graph(id='bargraph',
                       figure=px.bar(df, barmode='group', x='Years',
