@@ -164,6 +164,7 @@ def render_page_content(pathname):
                 id="my-date-picker-single",
                 min_date_allowed=date(2015, 1, 1),
                 initial_visible_month=date(2021, 6, 28),
+                date=date(2021, 6, 28),
                 display_format='YYYYMMDD'
                 ),
             html.Hr(),
@@ -286,6 +287,26 @@ def render_page_content(pathname):
         ]
     )
 
+
+
+@app.callback(
+    Output("datatable-interactivity", 'data'),
+    [Input("my-date-picker-single", 'date')])
+def update_pdf(stddate) :
+    def get_ETF_PDF(TICKER, std_date):
+        df = stock.get_etf_portfolio_deposit_file(TICKER, std_date)
+        df = df.reset_index(drop=False)
+        df = df.rename(columns={'티커':'Symbol'})
+        df = pd.merge(df,df_stock_list)
+        df['기준가'] = round(df['금액'] /df['계약수'])
+        df = df[['Symbol','Name','Market','Sector','기준가','계약수','금액','비중']]
+        df = df.rename(columns={'Symbol':'TICKER','Name':'종목명'})
+        df = df.reset_index(drop=True)
+        ETF_PDF = df
+        return ETF_PDF
+    ETF_PDF = get_ETF_PDF('289040', stddate)
+    data = ETF_PDF.to_dict("records")
+    return data
 
 @app.callback(
     Output('my-graph', 'figure'),
